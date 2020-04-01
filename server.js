@@ -5,16 +5,18 @@ const cors = require('cors');
 app.use(express.json());
 app.use(cors());
 
-app.locals.title = 'IdeaBox API';
+app.locals.title = 'Shout Out API';
 app.locals.ideas = [
   {id: 1, title: 'We Are All In This Together', description: '"Quote: from Highschool musical." Please use this to Shout out fellow students', password:'1911-Shout-Out'},
   { title: "Name", description: "Why you are shouting them out!", id: 1585755192067, password:'1911-Shout-Out'}
 ];
+app.locals.adminPassword = '@dmin-password';
 
 let port = process.env.PORT;
 if (port == null || port == "") {
-  port = 8000;
+  app.set('port', 8000)
 }
+
 app.listen(port);
 
 app.get('/api/v1/ideas', (request, response) => {
@@ -62,10 +64,14 @@ app.post('/api/v1/ideas', (request, response) => {
 });
 
 app.delete('/api/v1/ideas/:id', (request, response) => {
+  const deleteRequest = request.body;
   const { id } = request.params;
   const match = app.locals.ideas.find(idea => idea.id == id);
+  const password = app.locals.adminPassword
+  if (deleteRequest['password'] !== password)  return response.status(423).json({message: `${password, deleteRequest['password']} You dont have permision to delete`});
 
   if (!match) return response.status(404).json({message: `No idea found with an id of ${id}`});
+  
 
   const filteredIdeas = app.locals.ideas.filter(idea => idea.id != id);
 
