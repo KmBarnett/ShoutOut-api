@@ -25,7 +25,7 @@ app.get('/api/v1/ideas', (request, response) => {
         description: idea.description
       }
   })
-  response.status(200).json(app.locals.ideas);
+  response.status(200).json(formatedIdeas);
 });
 
 app.get('/api/v1/ideas/:id', (request, response) => {
