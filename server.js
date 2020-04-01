@@ -50,9 +50,15 @@ app.post('/api/v1/ideas', (request, response) => {
     if (!newIdea[requiredParameter]) return response.status(422).json({message: `You are missing a required parameter of ${requiredParameter}`});
   }
 
+  const formatedIdea = {
+    id: newIdea.id,
+    title: newIdea.title,
+    description: newIdea.description
+  }
+
   app.locals.ideas = [...app.locals.ideas, newIdea];
 
-  return response.status(201).json(newIdea);
+  return response.status(201).json(formatedIdea);
 });
 
 app.delete('/api/v1/ideas/:id', (request, response) => {
