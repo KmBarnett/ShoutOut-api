@@ -10,7 +10,11 @@ app.locals.ideas = [
   {id: 1, title: 'We Are All In This Together', description: '"Quote: from Highschool musical." Please use this to Shout out fellow students'},
 ];
 
-app.set('port', 3001);
+let port = process.env.PORT;
+if (port == null || port == "") {
+  port = 8000;
+}
+app.listen(port);
 
 app.get('/api/v1/ideas', (request, response) => {
   response.status(200).json(app.locals.ideas);
