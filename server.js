@@ -46,7 +46,7 @@ app.post('/api/v1/ideas', (request, response) => {
   const newIdea = request.body;
 
   for (let requiredParameter of ['id', 'title', 'description', 'password']) {
-    if (!newIdea['password'] !== '1911-Shout-Out') return response.status(422).json({message: `Your password is incorrect you cannot post`});
+    if (newIdea['password'] !== '1911-Shout-Out') return response.status(422).json({message: `Your password is incorrect you cannot post`});
     if (!newIdea[requiredParameter]) return response.status(422).json({message: `You are missing a required parameter of ${requiredParameter}`});
   }
 
