@@ -7,7 +7,8 @@ app.use(cors());
 
 app.locals.title = 'IdeaBox API';
 app.locals.ideas = [
-  {id: 1, title: 'We Are All In This Together', description: '"Quote: from Highschool musical." Please use this to Shout out fellow students'},
+  {id: 1, title: 'We Are All In This Together', description: '"Quote: from Highschool musical." Please use this to Shout out fellow students' password:'1911-Shout-Out'},
+  { title: "Name", description: "Why you are shouting them out!", id: 1585755192067, password:'1911-Shout-Out'}
 ];
 
 let port = process.env.PORT;
@@ -17,12 +18,27 @@ if (port == null || port == "") {
 app.listen(port);
 
 app.get('/api/v1/ideas', (request, response) => {
+  let formatedIdeas = app.locals.ideas.map(idea => {
+    return {
+      {
+        id: idea.id,
+        title: idea.title,
+        description: idea.description
+      }
+    }
+  })
   response.status(200).json(app.locals.ideas);
 });
 
 app.get('/api/v1/ideas/:id', (request, response) => {
   const { id } = request.params;
   const match = app.locals.ideas.find(idea => idea.id == id);
+  const { id, title, description } = match
+  const formatedIdea = {
+    id,
+    title,
+    description
+  }
 
   if (!match) return response.status(404).json({message: `No idea found with an id of ${id}`});
 
@@ -32,7 +48,8 @@ app.get('/api/v1/ideas/:id', (request, response) => {
 app.post('/api/v1/ideas', (request, response) => {
   const newIdea = request.body;
 
-  for (let requiredParameter of ['id', 'title', 'description']) {
+  for (let requiredParameter of ['id', 'title', 'description', 'password']) {
+    if (!newIdea['password'] !== '1911-Shout-Out') return response.status(422).json({message: `Your password is incorrect you cannot post`});
     if (!newIdea[requiredParameter]) return response.status(422).json({message: `You are missing a required parameter of ${requiredParameter}`});
   }
 
