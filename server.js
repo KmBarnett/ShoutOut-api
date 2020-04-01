@@ -7,9 +7,7 @@ app.use(cors());
 
 app.locals.title = 'IdeaBox API';
 app.locals.ideas = [
-  {id: 1, title: 'Sweaters for pugs', description: 'To keep them warm'},
-  {id: 2, title: 'A romcom', description: 'But make it ghosts'},
-  {id: 3, title: 'A game show called Ether/Or', description: 'When you lose you get chloroformed'},
+  {id: 1, title: 'We Are All In This Together', description: '"Quote: from Highschool musical." Please use this to Shout out fellow students'},
 ];
 
 app.set('port', 3001);
