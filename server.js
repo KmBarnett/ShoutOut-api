@@ -33,16 +33,15 @@ app.get('/api/v1/ideas', (request, response) => {
 app.get('/api/v1/ideas/:id', (request, response) => {
   const { id } = request.params;
   const match = app.locals.ideas.find(idea => idea.id == id);
-  const { id, title, description } = match
   const formatedIdea = {
-    id,
-    title,
-    description
+    id: match.id,
+    title: match.title,
+    description: match.description
   }
 
   if (!match) return response.status(404).json({message: `No idea found with an id of ${id}`});
 
-  return response.status(200).json(match);
+  return response.status(200).json(formatedIdea);
 });
 
 app.post('/api/v1/ideas', (request, response) => {
