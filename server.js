@@ -3,6 +3,12 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 
+const mongoose = require('mongoose');
+mongoose.connect(process.env.CONNECTION_STRING)
+
+const shoutOutSchema = require('./shoutOutSchema.js');
+const ShoutOut = mongoose.model('sample-shouts-out' shoutOutSchema);
+
 app.use(express.json());
 app.use(cors());
 
