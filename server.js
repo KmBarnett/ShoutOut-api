@@ -80,6 +80,7 @@ app.post('/api/v1/ideas', async (request, response, next) => {
       .exec((err, result) => {
         if (result) {
           console.log('IN EXEC');
+          response.status(422);
           reject(`Shout out with id ${id} already exists.`)
         } else {
           resolve() 
@@ -91,10 +92,8 @@ app.post('/api/v1/ideas', async (request, response, next) => {
     .then(() => {
       newIdeaDocument.save(err => {
         if (err) {
-          console.log('89')
           return Promise.reject(err);
         } else {
-          console.log('93');
           return response.status(201).json(newIdea);
         }
       })
@@ -104,30 +103,29 @@ app.post('/api/v1/ideas', async (request, response, next) => {
 
 });
 
-app.delete('/api/v1/ideas/:id', async(request, response) => {
+app.delete('/api/v1/ideas/:id', async(request, response, next) => {
   const { id } = request.params;
-  let match;
-  
-  try {
-      match = await ShoutOut
+  let match = new Promise((resolve, reject) => {
+    ShoutOut
       .findOneAndDelete({"id": id})
       .exec((err, result) => {
         if (err) {
-          return response.status(400).json(err);
+          reject(response.status(400))
         } 
-        console.log('In exec');
-        return match = result;
+        resolve(result)
       });
-  } catch (err) {
-    next(err);
-  }
+  });
 
-  if (!match) {
-    console.log('in false match');
-    return response.status(404).json({message: `No shout out found with an id of ${id}`});
-  }
+  match
+    .then(result => {
+      if (result) {
+        return response.sendStatus(204);
+      } else {
+        return Promise.reject(`No shout out found with an id of ${id}`)
+      }
+    })
+    .catch(next);
 
-  return response.sendStatus(204);
 });
 
 app.listen(app.get('port'), () => {
