@@ -1,16 +1,30 @@
+require('dotenv').config(); // Allows us to get and use environmental variables
 const express = require('express');
 const app = express();
 const cors = require('cors');
 
+const mongoose = require('mongoose');
+mongoose.connect(process.env.CONNECTION_STRING, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  dbName: "ShoutOuts"
+})
+  .catch(error => console.error(error));
+
+var db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function() {
+  console.log('Connected!');
+});
+
+const shoutOutSchema = require('./shoutOutSchema.js');
+const ShoutOut = mongoose.model('1911ShoutOut', shoutOutSchema);
+
 app.use(express.json());
 app.use(cors());
 
-app.locals.title = 'Shout Out API';
-app.locals.ideas = [
-  {id: 1, title: 'We Are All In This Together', description: '"Quote: from Highschool musical." Please use this to Shout out fellow students', password:'1911-Shout-Out'},
-  { title: "Name", description: "Why you are shouting them out!", id: 1585755192067, password:'1911-Shout-Out'}
-];
-app.locals.adminPassword = '@dmin-password';
+app.locals.title = 'ShoutOut API';
+app.locals.ideas = [];
 
 let port = process.env.PORT;
 if (port == null || port == "") {
@@ -20,64 +34,99 @@ if (port == null || port == "") {
 app.listen(port);
 
 app.get('/api/v1/ideas', (request, response) => {
-  let formatedIdeas = app.locals.ideas.map(idea => {
-    return {
-        id: idea.id,
-        title: idea.title,
-        description: idea.description
+  ShoutOut
+    .find()
+    .select('id title description')
+    .exec((err, results) => {
+      if (err) {
+        return response.status(422).json(err)
+      } else {
+        response.status(200).json(results);
       }
-  })
-  response.status(200).json(formatedIdeas);
+    })
 });
 
 app.get('/api/v1/ideas/:id', (request, response) => {
   const { id } = request.params;
-  const match = app.locals.ideas.find(idea => idea.id == id);
-  const formatedIdea = {
-    id: match.id,
-    title: match.title,
-    description: match.description
-  }
 
-  if (!match) return response.status(404).json({message: `No idea found with an id of ${id}`});
-
-  return response.status(200).json(formatedIdea);
+  ShoutOut.findOne({"id": id})
+    .select("id title description")
+    .exec((err, result) => {
+      if (err) {
+        return response.status(404).json(err)
+      } else if (!result) {
+        return response.status(404).json({'message': `No entry with id ${id} found`})
+      } else {
+        return response.status(200).json(result);
+      }
+    });
 });
 
-app.post('/api/v1/ideas', (request, response) => {
-  const newIdea = request.body;
+app.post('/api/v1/ideas', async (request, response, next) => {
+  const {id, title, description, password} = request.body;
+  const newIdea = {id, title, description};
+  const newIdeaDocument = new ShoutOut(request.body);
+
+  if (password !== "1911-Shout-Out") {
+    return response.status(422).json({"message": "Incorrect password -- post not permitted"});
+  }
 
   for (let requiredParameter of ['id', 'title', 'description', 'password']) {
     if (newIdea['password'] !== '1911-Shout-Out') return response.status(422).json({message: `Your password is incorrect you cannot post`});
     if (!newIdea[requiredParameter]) return response.status(422).json({message: `You are missing a required parameter of ${requiredParameter}`});
   }
 
-  const formatedIdea = {
-    id: newIdea.id,
-    title: newIdea.title,
-    description: newIdea.description
-  }
+  let query = new Promise( (resolve, reject) => {
+    ShoutOut.findOne({"id": id})
+      .exec((err, result) => {
+        if (result) {
+          console.log('IN EXEC');
+          response.status(422);
+          reject(`Shout out with id ${id} already exists.`)
+        } else {
+          resolve()
+        }
+      })
+  });
 
-  app.locals.ideas = [...app.locals.ideas, newIdea];
+  query
+    .then(() => {
+      newIdeaDocument.save(err => {
+        if (err) {
+          return Promise.reject(err);
+        } else {
+          return response.status(201).json(newIdea);
+        }
+      })
+    })
+    .catch(next);
 
-  return response.status(201).json(formatedIdea);
+
 });
 
-app.delete('/api/v1/ideas/:id', (request, response) => {
-  const deleteRequest = request.body;
+app.delete('/api/v1/ideas/:id', async(request, response, next) => {
   const { id } = request.params;
-  const match = app.locals.ideas.find(idea => idea.id == id);
-  const password = app.locals.adminPassword
-  if (deleteRequest['password'] !== password)  return response.status(423).json({message: `${password, deleteRequest['password']} You dont have permision to delete`});
+  let match = new Promise((resolve, reject) => {
+    ShoutOut
+      .findOneAndDelete({"id": id})
+      .exec((err, result) => {
+        if (err) {
+          reject(response.status(400))
+        }
+        resolve(result)
+      });
+  });
 
-  if (!match) return response.status(404).json({message: `No idea found with an id of ${id}`});
-  
+  match
+    .then(result => {
+      if (result) {
+        return response.sendStatus(204);
+      } else {
+        return Promise.reject(`No shout out found with an id of ${id}`)
+      }
+    })
+    .catch(next);
 
-  const filteredIdeas = app.locals.ideas.filter(idea => idea.id != id);
-
-  app.locals.ideas = filteredIdeas;
-
-  return response.sendStatus(204);
 });
 
 app.listen(app.get('port'), () => {
