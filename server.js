@@ -38,7 +38,7 @@ app.get('/api/v1/ideas', (request, response) => {
     .select('id title description')
     .exec((err, results) => {
       if (err) {
-        console.error(err)
+        return response.status(422).json(err)
       } else {
         response.status(200).json(results);
       }
@@ -48,11 +48,19 @@ app.get('/api/v1/ideas', (request, response) => {
 
 app.get('/api/v1/ideas/:id', (request, response) => {
   const { id } = request.params;
-  const match = app.locals.ideas.find(idea => idea.id == id);
 
-  if (!match) return response.status(404).json({message: `No idea found with an id of ${id}`});
+  ShoutOut.findOne({"id": id})
+    .select("id title description")
+    .exec((err, result) => {
+      if (err) {
+        return response.status(404).json(err)
+      } else if (!result) {
+        return response.status(404).json({'message': `No entry with id ${id} found`})
+      } else {
+        return response.status(200).json(result);
+      }
+    });
 
-  return response.status(200).json(match);
 });
 
 app.post('/api/v1/ideas', (request, response) => {
