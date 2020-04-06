@@ -4,8 +4,8 @@ const app = express();
 const cors = require('cors');
 
 const mongoose = require('mongoose');
-mongoose.connect(process.env.CONNECTION_STRING, { 
-  useNewUrlParser: true, 
+mongoose.connect(process.env.CONNECTION_STRING, {
+  useNewUrlParser: true,
   useUnifiedTopology: true,
   dbName: "ShoutOuts"
 })
@@ -23,12 +23,8 @@ const ShoutOut = mongoose.model('1911ShoutOut', shoutOutSchema);
 app.use(express.json());
 app.use(cors());
 
-app.locals.title = 'IdeaBox API';
-app.locals.ideas = [
-  {id: 1, title: 'Sweaters for pugs', description: 'To keep them warm'},
-  {id: 2, title: 'A romcom', description: 'But make it ghosts'},
-  {id: 3, title: 'A game show called Ether/Or', description: 'When you lose you get chloroformed'},
-];
+app.locals.title = 'ShoutOut API';
+app.locals.ideas = [];
 
 app.set('port', 3001);
 
@@ -82,7 +78,7 @@ app.post('/api/v1/ideas', async (request, response, next) => {
           response.status(422);
           reject(`Shout out with id ${id} already exists.`)
         } else {
-          resolve() 
+          resolve()
         }
       })
   });
@@ -110,7 +106,7 @@ app.delete('/api/v1/ideas/:id', async(request, response, next) => {
       .exec((err, result) => {
         if (err) {
           reject(response.status(400))
-        } 
+        }
         resolve(result)
       });
   });
