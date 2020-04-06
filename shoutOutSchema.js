@@ -15,4 +15,4 @@ const shoutOutSchema = new mongoose.Schema({
   }
 });
 
-export default shoutOutSchema;
+module.exports = shoutOutSchema;

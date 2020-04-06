@@ -4,10 +4,21 @@ const app = express();
 const cors = require('cors');
 
 const mongoose = require('mongoose');
-mongoose.connect(process.env.CONNECTION_STRING)
+mongoose.connect(process.env.CONNECTION_STRING, { 
+  useNewUrlParser: true, 
+  useUnifiedTopology: true,
+  dbName: "ShoutOuts"
+})
+  .catch(error => console.error(error));
+
+var db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function() {
+  console.log('Connected!');
+});
 
 const shoutOutSchema = require('./shoutOutSchema.js');
-const ShoutOut = mongoose.model('sample-shouts-out' shoutOutSchema);
+const ShoutOut = mongoose.model('sample-shouts-out', shoutOutSchema);
 
 app.use(express.json());
 app.use(cors());
@@ -22,7 +33,17 @@ app.locals.ideas = [
 app.set('port', 3001);
 
 app.get('/api/v1/ideas', (request, response) => {
-  response.status(200).json(app.locals.ideas);
+  ShoutOut
+    .find()
+    .select('id title description')
+    .exec((err, results) => {
+      if (err) {
+        console.error(err)
+      } else {
+        response.status(200).json(results);
+      }
+    })
+  //response.status(200).json(app.locals.ideas);
 });
 
 app.get('/api/v1/ideas/:id', (request, response) => {
@@ -36,14 +57,23 @@ app.get('/api/v1/ideas/:id', (request, response) => {
 
 app.post('/api/v1/ideas', (request, response) => {
   const newIdea = request.body;
-
+  console.log(newIdea);
+  const newIdeaDoc = new ShoutOut(request.body);
   for (let requiredParameter of ['id', 'title', 'description']) {
     if (!newIdea[requiredParameter]) return response.status(422).json({message: `You are missing a required parameter of ${requiredParameter}`});
   }
 
   app.locals.ideas = [...app.locals.ideas, newIdea];
 
-  return response.status(201).json(newIdea);
+  newIdeaDoc.save(err => {
+    if (err) {
+      return response.status(422).json({'message': 'You messed up'})
+    } else {
+      return response.status(201).json({message: 'Shout out created'});
+    }
+  });
+
+  //return response.status(201).json(newIdea);
 });
 
 app.delete('/api/v1/ideas/:id', (request, response) => {
