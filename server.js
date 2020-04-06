@@ -18,7 +18,7 @@ db.once('open', function() {
 });
 
 const shoutOutSchema = require('./shoutOutSchema.js');
-const ShoutOut = mongoose.model('sample-shouts-out', shoutOutSchema);
+const ShoutOut = mongoose.model('1911ShoutOut', shoutOutSchema);
 
 app.use(express.json());
 app.use(cors());
@@ -43,7 +43,6 @@ app.get('/api/v1/ideas', (request, response) => {
         response.status(200).json(results);
       }
     })
-  //response.status(200).json(app.locals.ideas);
 });
 
 app.get('/api/v1/ideas/:id', (request, response) => {
