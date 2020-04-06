@@ -60,39 +60,72 @@ app.get('/api/v1/ideas/:id', (request, response) => {
         return response.status(200).json(result);
       }
     });
-
 });
 
-app.post('/api/v1/ideas', (request, response) => {
-  const newIdea = request.body;
-  console.log(newIdea);
-  const newIdeaDoc = new ShoutOut(request.body);
+app.post('/api/v1/ideas', async (request, response, next) => {
+  const {id, title, description, password} = request.body;
+  const newIdea = {id, title, description};
+  const newIdeaDocument = new ShoutOut(request.body);
+
+  if (password !== "1911-Shout-Out") {
+    return response.status(422).json({"message": "Incorrect password -- post not permitted"});
+  }
+
   for (let requiredParameter of ['id', 'title', 'description']) {
     if (!newIdea[requiredParameter]) return response.status(422).json({message: `You are missing a required parameter of ${requiredParameter}`});
   }
 
-  app.locals.ideas = [...app.locals.ideas, newIdea];
-
-  newIdeaDoc.save(err => {
-    if (err) {
-      return response.status(422).json({'message': 'You messed up'})
-    } else {
-      return response.status(201).json({message: 'Shout out created'});
-    }
+  let query = new Promise( (resolve, reject) => {
+    ShoutOut.findOne({"id": id})
+      .exec((err, result) => {
+        if (result) {
+          console.log('IN EXEC');
+          reject(`Shout out with id ${id} already exists.`)
+        } else {
+          resolve() 
+        }
+      })
   });
 
-  //return response.status(201).json(newIdea);
+  query
+    .then(() => {
+      newIdeaDocument.save(err => {
+        if (err) {
+          console.log('89')
+          return Promise.reject(err);
+        } else {
+          console.log('93');
+          return response.status(201).json(newIdea);
+        }
+      })
+    })
+    .catch(next);
+
+
 });
 
-app.delete('/api/v1/ideas/:id', (request, response) => {
+app.delete('/api/v1/ideas/:id', async(request, response) => {
   const { id } = request.params;
-  const match = app.locals.ideas.find(idea => idea.id == id);
+  let match;
+  
+  try {
+      match = await ShoutOut
+      .findOneAndDelete({"id": id})
+      .exec((err, result) => {
+        if (err) {
+          return response.status(400).json(err);
+        } 
+        console.log('In exec');
+        return match = result;
+      });
+  } catch (err) {
+    next(err);
+  }
 
-  if (!match) return response.status(404).json({message: `No idea found with an id of ${id}`});
-
-  const filteredIdeas = app.locals.ideas.filter(idea => idea.id != id);
-
-  app.locals.ideas = filteredIdeas;
+  if (!match) {
+    console.log('in false match');
+    return response.status(404).json({message: `No shout out found with an id of ${id}`});
+  }
 
   return response.sendStatus(204);
 });
